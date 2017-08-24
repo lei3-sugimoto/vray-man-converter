@@ -1,0 +1,19 @@
+{
+  "name": "vray-man-converter",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://lei3-sugimoto@github.com/lei3-sugimoto/vray-man-converter.git"
+  },
+  "author": "lei3.sugimoto@gmail.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lei3-sugimoto/vray-man-converter/issues"
+  },
+  "homepage": "https://github.com/lei3-sugimoto/vray-man-converter#readme"
+}
