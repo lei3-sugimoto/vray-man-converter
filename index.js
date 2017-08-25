@@ -25,11 +25,25 @@ const DescCount   = 2
 const RowCount    = 2
 const ColumnCount = 2
 
+const LangOrg = "org"
+const LangJa = "ja"
+const LangTrans = "trans"
 
+const DummyTitleText = "DUMMYTITLETEXT"
+const DummyDescText  = "DUMMYDESCTEXT"
+const DummyCellText  = "DUMMYCELLTEXT"
+
+const TypeTitle = "title"
+const TypeDesc = "desc"
+const TypeCell = "cell"
+
+const HtmlClassOrg = ".trans-org"
+const HtmlClassJa = ".trans-ja"
 
 var titleText = "@@titleText"
 var descText = "@@descText"
-var cellText = "@@cellText"
+var cellText = "${cellText}"
+// var cellText = ""
 
 const template = {
 	"html": [
@@ -53,7 +67,7 @@ const template = {
 		},
 		{
 			"no": 3,
-			"code": `		${titleText}`,
+			"code": `		DUMMYTITLETEXT`,
 			"desc": {"start": false, "mid": false, "end": false},
 			"row":  {"start": false, "mid": false, "end": false},
 			"column": false,
@@ -71,7 +85,7 @@ const template = {
 		},
 		{
 			"no": 5,
-			"code": `		span.note ${descText}`,
+			"code": `		span.note DUMMYDESCTEXT`,
 			"desc": {"start": false, "mid": false, "end": true},
 			"row":  {"start": false, "mid": false, "end": false},
 			"column": false,
@@ -125,7 +139,7 @@ const template = {
 		},
 		{
 			"no": 11,
-			"code": `			th ${cellText}`,
+			"code": `			th DUMMYCELLTEXT`,
 			"desc": {"start": false, "mid": false, "end": false},
 			"row":  {"start": false, "mid": false, "end": false},
 			"column": true,
@@ -172,16 +186,15 @@ const template = {
 }
 
 const contents = {
-	"text": [
-{"type":"title","line":1,"org":"Example: Zoom Factor","ja":"あいう"},
-{"type":"desc","line":1,"org":"This parameter determines the zooming (In and Out) of the final image. It doesn't move the camera forward nor backwards.","ja":"えおか"},
-{"type":"desc","line":2,"org":"Exposure is on, f-number is 8.0, shutter speed is 60.0, film speed (ISO) is 200.0, vignetting is on, white balance is white.","ja":"あいう"},
-{"type":"cell","line":1,"org":"zoom factor = 1.0","ja":"えおか"},
-{"type":"cell","line":2,"org":"zoom factor = 2.0","ja":"あいう"},
-{"type":"cell","line":3,"org":"zoom factor = 0.5","ja":"えおか"}
-{"type":"cell","line":4,"org":"zoom factor = 2.0","ja":"あいう"}
-],
-	"meta": {
+	"text":
+// use https://shancarter.github.io/mr-data-converter/
+[{"type":"title","line":1,"org":"Example: Zoom Factor","ja":"あいう","trans":null},
+{"type":"desc","line":1,"org":"This parameter determines the zooming (In and Out) of the final image. It doesn't move the camera forward nor backwards.","ja":"えおか","trans":null},
+{"type":"desc","line":2,"org":"Exposure is on, f-number is 8.0, shutter speed is 60.0, film speed (ISO) is 200.0, vignetting is on, white balance is white.","ja":"あいう","trans":null},
+{"type":"cell","line":1,"org":"zoom factor = 1.0","ja":"えおか","trans":null},
+{"type":"cell","line":2,"org":"zoom factor = 2.0","ja":"あいう","trans":null},
+{"type":"cell","line":3,"org":"zoom factor = 0.5","ja":"えおか","trans":null}]
+	,"meta": {
 		"DescCount": 2,
 		"RowCount": 2,
 		"ColumnCount": 2
@@ -299,6 +312,7 @@ var replicateAndPushDescCodes = ()=>{
  */
 
 var rowItems = []
+var cellText = ""
 
 var hasRowStart  = (item)=>{return item.row.start}
 var hasRowMid    = (item)=>{return item.row.mid}
@@ -332,16 +346,31 @@ var replicateAndPushRowCodes = ()=>{
  */
 
 var columnItems = []
+var cellCount = 0
+var cellText = ""
+var regRule = new RegExp(DummyCellText, "g")
 
 var hasColumn = (item)=>{return item.column}
+var hasCellVal = (item)=>{return item.code.indexOf(DummyCellText) !== -1}
 
 var poolColumnItem = (item)=>{
 	resetColumnItems()
 	columnItems.push(item)
 }
 
+var setCellText = (item, lang)=>{
+	cellCount++
+	if(hasCellVal){
+		item.code += HtmlClassJa
+		item.code += " "
+		item.code = item.code.replace(regRule, getText(TypeCell, cellCount, lang))		
+	}
+}
+
 var resetColumnItems = ()=>{
+	console.log("resetColumnItems")
 	columnItems = []
+	cellCount = 0
 }
 
 var replicateAndPushColumnCode = ()=>{
@@ -351,6 +380,8 @@ var replicateAndPushColumnCode = ()=>{
 		}
 	}
 	columnItems.forEach((item)=>{
+		setCellText(item, LangTrans)
+		console.log("item.code: ", item.code, " cellText: ", cellText)
 		pushCode(item.code)
 	})
 }
@@ -373,8 +404,21 @@ var applyTitleText = (item)=>{
 	if(item.text == "title") item.code
 }
 
-var searchText = (type, count)=>{
+/**
+ *
+ * text
+ *
+ */
 
+var texts = contents.text
+
+var getText = (type, line, lang)=>{
+	var results = texts.filter((v)=>{
+		console.log("type: ", type, " line: ", line)
+		return v.type == type && v.line == line
+	})
+	if(results.length !== 1) throw new UserExeption("cell text may be duplicated")
+	return results[0][lang]
 }
 
 /**
@@ -384,7 +428,7 @@ var searchText = (type, count)=>{
  */
 
 sortAscending(template.html).forEach((item)=>{
-	// console.log("item.no: ", item.no)
+	console.log("item.no: ", item.no)
 
 	// desc
 	if(hasDesc(item) && canProcessDesc()){
